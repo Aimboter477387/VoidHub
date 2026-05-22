@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VOID HUB // TERMINAL // DARKNET</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: crosshair;
+        }
+
+        :root {
+            --bg-void: #030307;
+            --bg-panel: #0a0c12;
+            --cyan-core: #0ff;
+            --cyan-glow: rgba(0, 255, 255, 0.7);
+            --magenta-accent: #ff00cc;
+            --purple-deep: #aa00ff;
+            --text-dim: #b0b8c5;
+            --text-bright: #f0f3ff;
+            --scan-opacity: 0.08;
+            --border-glow: 0 0 8px rgba(0, 255, 255, 0.4);
+        }
+
+        body {
+            background: radial-gradient(circle at 20% 30%, #05080f, #010101);
+            color: var(--text-dim);
+            font-family: 'Fira Code', monospace;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* animated grid + noise overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03) 1px, transparent 2px, transparent 4px),
+                repeating-linear-gradient(90deg, rgba(255, 0, 255, 0.02) 1px, transparent 2px, transparent 6px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* scanline motion */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, transparent, cyan, magenta, transparent);
+            opacity: 0.2;
+            animation: scanMove 8s linear infinite;
+            pointer-events: none;
+            z-index: 12;
+        }
+
+        @keyframes scanMove {
+            0% { top: -10px; opacity: 0;}
+            10% { opacity: 0.6;}
+            90% { opacity: 0.6;}
+            100% { top: 100%; opacity: 0;}
+        }
+
+        /* glitch background effect */
+        .glow-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 30%, rgba(0,255,255,0.08), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.8rem 5rem;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            background: rgba(3, 3, 10, 0.75);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0ff, #f0f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0,255,255,0.5);
+            animation: pulseLogo 3s infinite alternate;
+        }
+
+        @keyframes pulseLogo {
+            0% { filter: drop-shadow(0 0 2px cyan); opacity: 0.9;}
+            100% { filter: drop-shadow(0 0 12px magenta); opacity: 1;}
+        }
+
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 5;
+        }
+
+        .glitch-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .glitch {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            position: relative;
+            background: linear-gradient(135deg, cyan, #ff44cc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 25px rgba(0,255,255,0.6);
+            animation: hueShift 6s infinite;
+        }
+
+        @keyframes hueShift {
+            0% { filter: hue-rotate(0deg);}
+            50% { filter: hue-rotate(15deg);}
+            100% { filter: hue-rotate(0deg);}
+        }
+
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .glitch::before {
+            left: 3px;
+            text-shadow: -3px 0 #ff00cc;
+            clip: rect(20px, 550px, 80px, 0);
+            animation: glitch-anim-2 2.8s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -3px;
+            text-shadow: 2px 0 cyan;
+            clip: rect(65px, 550px, 130px, 0);
+            animation: glitch-anim 2.2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(12px, 9999px, 48px, 0); }
+            25% { clip: rect(80px, 9999px, 55px, 0); }
+            50% { clip: rect(32px, 9999px, 112px, 0); }
+            75% { clip: rect(60px, 9999px, 30px, 0); }
+            100% { clip: rect(18px, 9999px, 98px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(48px, 9999px, 102px, 0); }
+            25% { clip: rect(15px, 9999px, 42px, 0); }
+            50% { clip: rect(93px, 9999px, 78px, 0); }
+            75% { clip: rect(5px, 9999px, 66px, 0); }
+            100% { clip: rect(74px, 9999px, 28px, 0); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: #8aa9c9;
+            background: rgba(0,0,0,0.6);
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0,255,255,0.3);
+            margin-bottom: 2.5rem;
+        }
+
+        /* enhanced terminal */
+        .terminal-box {
+            background: #03050a;
+            border: 1px solid cyan;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 850px;
+            margin: 0 auto 2.8rem auto;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 8px rgba(0,255,255,0.1);
+            transition: 0.3s;
+        }
+        .terminal-header {
+            background: linear-gradient(90deg, #0a0f1a, #001111);
+            padding: 8px 20px;
+            font-weight: bold;
+            border-bottom: 1px solid cyan;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 10px 10px 0 0;
+            color: cyan;
+        }
+        .terminal-body {
+            padding: 28px;
+            min-height: 180px;
+            font-size: 1rem;
+            background: #010105;
+            font-weight: 500;
+        }
+        #typewriter {
+            color: #0ff;
+            text-shadow: 0 0 3px cyan;
+        }
+        .cursor {
+            display: inline-block;
+            width: 12px;
+            height: 20px;
+            background-color: cyan;
+            vertical-align: middle;
+            margin-left: 4px;
+            animation: blinkStep 1s step-end infinite;
+            box-shadow: 0 0 6px cyan;
+        }
+        @keyframes blinkStep {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .btn-glitch {
+            display: inline-block;
+            padding: 14px 48px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 800;
+            font-size: 1.2rem;
+            background: #0ff;
+            color: black;
+            text-decoration: none;
+            text-transform: uppercase;
+            position: relative;
+            transition: 0.2s;
+            letter-spacing: 2px;
+            border-radius: 40px;
+            box-shadow: 0 0 12px cyan, inset 0 0 4px white;
+        }
+        .btn-glitch:hover {
+            background: #ff33cc;
+            box-shadow: 0 0 28px #ff00cc;
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .section-title {
+            text-align: center;
+            font-family: 'Orbitron', monospace;
+            font-size: 2.7rem;
+            font-weight: 800;
+            letter-spacing: 5px;
+            margin: 3rem 0 1.5rem;
+            background: linear-gradient(135deg, cyan, magenta);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* advanced grid with animated borders */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+            padding: 1rem 5rem 5rem 5rem;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .tech-card {
+            background: rgba(8, 12, 20, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+
+        .tech-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(125deg, rgba(0,255,255,0.1) 0%, rgba(255,0,200,0.05) 100%);
+            pointer-events: none;
+        }
+
+        .tech-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: #0ff;
+            box-shadow: 0 0 28px rgba(0, 255, 255, 0.4);
+            background: rgba(0, 20, 30, 0.8);
+        }
+
+        .tech-card h3 {
+            font-family: 'Orbitron', monospace;
+            color: cyan;
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid magenta;
+            padding-left: 15px;
+        }
+
+        .tech-card p {
+            color: #cbd5e6;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .icon-glow {
+            color: cyan;
+            filter: drop-shadow(0 0 4px cyan);
+        }
+
+        /* badge for cafes */
+        .cafe-badge {
+            display: inline-block;
+            background: #0a0f1e;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: cyan;
+            border: 1px solid cyan;
+            margin-top: 12px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2.5rem;
+            border-top: 1px solid rgba(0,255,255,0.2);
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #5f7f9f;
+        }
+
+        @media (max-width: 800px) {
+            .glitch { font-size: 3.5rem; }
+            nav { padding: 1rem 1.5rem; flex-direction: column; gap: 1rem; }
+            .grid-container { padding: 1rem 1.5rem; gap: 1.5rem; }
+            .hero { padding: 1rem; }
+            .terminal-box { width: 95%; }
+            .btn-glitch { padding: 10px 28px; font-size: 1rem;}
+        }
+
+        /* extra particle effect */
+        .particle-field {
+            position: fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .stat-badge {
+            background: rgba(0,0,0,0.6);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            backdrop-filter: blur(4px);
+        }
+        /* STARS SPACE BACKGROUND - lightweight static starfield */
+        #starfieldCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+            z-index: -1;
+            background: transparent;
+        }
+        /* ensure matrix canvas stays above stars but below content */
+        #matrixCanvas {
+            z-index: 2;
+            opacity: 0.28;
+        }
+        .glow-bg {
+            z-index: 1;
+        }
+        body::before {
+            z-index: 3;
+        }
+        .hero, .grid-container, nav, footer, .section-title, .terminal-box, .btn-glitch {
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+<!-- STARFIELD CANVAS for deep space vibe -->
+<canvas id="starfieldCanvas"></canvas>
+<div class="scanline"></div>
+<div class="glow-bg"></div>
+<canvas class="particle-field" id="matrixCanvas"></canvas>
+
+<nav>
+    <div class="logo"><i class="fas fa-skull"></i> [ VOID//HUB ]</div>
+    <a href="https://discord.gg/voidhub" class="btn-outline" target="_blank" style="border:1px solid cyan; padding:8px 24px; border-radius:30px; color:cyan; text-decoration:none; font-weight:bold; backdrop-filter:blur(6px);"><i class="fab fa-discord"></i> ACCESS SERVER</a>
+</nav>
+
+<div class="hero">
+    <div class="glitch-wrapper">
+        <h1 class="glitch" data-text="VOID HUB">VOID HUB</h1>
+    </div>
+    <p class="subtitle"><i class="fas fa-terminal"></i> // THE BIGGEST ROBLOX TROLLING SERVER // <i class="fas fa-dragon"></i></p>
+    
+    <div class="terminal-box">
+        <div class="terminal-header">
+            <span><i class="fas fa-code"></i> root@void:~#</span>
+            <span>[SYNC_ACTIVE]</span>
+        </div>
+        <div class="terminal-body">
+            <span id="typewriter"></span><span class="cursor"></span>
+        </div>
+    </div>
+
+    <a href="https://discord.gg/voidhub" class="btn-glitch" target="_blank"><i class="fas fa-bolt"></i> INITIALIZE INVITE <i class="fas fa-arrow-right"></i></a>
+    <div class="stat-badge"><i class="fas fa-user-secret"></i> 700+ Operatives • <i class="fas fa-globe"></i> Global Node Active</div>
+</div>
+
+<h2 class="section-title"><i class="fas fa-cogs"></i> DARKNET PROTOCOLS <i class="fas fa-cogs"></i></h2>
+
+<div class="grid-container">
+    <div class="tech-card">
+        <h3><i class="fas fa-database icon-glow"></i> [01] INTEL LEAKS</h3>
+        <p>We got staff guides leaked from cafes & beyond! Training manuals, admin protocols — if a ROBLOX group tries to hide it, we EXPOSE. Knowledge is the ultimate weapon.</p>
+        <div class="cafe-badge"><i class="fas fa-eye"></i> live: Boba • Pastriez • Hokui • Kohau</div>
+    </div>
+
+    <div class="tech-card">
+        <h3><i class="fas fa-shield-alt icon-glow"></i> [02] WALL OF SHAME</h3>
+        <p>Banned by a power-tripping mod? We immortalize staff meltdowns in legendary #wall-of-shame. Corrupt admins EXPOSED daily with screenshots and logs.</p>
+    </div>
+
+    <div class="tech-card">
+        <h3><i class="fas fa-code-branch icon-glow"></i> [03] CUSTOM SCRIPTS</h3>
+        <p>Advanced exploit arsenal: Auto-troll GUIs, chat bypasses. Updated by elite devs.</p>
+    </div>
+
+    <div class="tech-card">
+    <h3><i class="fas fa-users icon-glow"></i> [04] CAFE RAIDS</h3>
+    <p><strong>Trollers share same dislike view on MRs+ with you</strong> — unite with the community against power-tripping moderation. Share targets, coordinate takedowns, and let your voice be heard across the network.</p>
+    <div class="cafe-badge"><i class="fas fa-fire"></i> #Raids • united front</div>
+    </div>
+
+    <div class="tech-card">
+        <h3><i class="fas fa-comment-slash icon-glow"></i> [05] FILTER BYPASS</h3>
+        <p>ROBLOX chat filter? OBLITERATED. Our exclusive chat bypass methods are updated weekly. No tags, no limits, say whatever you want in any server.</p>
+    </div>
+
+    <div class="tech-card">
+        <h3><i class="fas fa-ban icon-glow"></i> [06] BLACKLIST VAULT</h3>
+        <p><strong>The staff you dislike from cafes are blacklisted here!</strong> We maintain a permanent blacklist of abusive mods from Boba, Hokui, Delights Bakery, and more. Track them, troll them, never let them hide.</p>
+        <div class="cafe-badge"><i class="fas fa-skull"></i> blacklisted staff: 50+</div>
+    </div>
+</div>
+
+<footer>
+    <p><i class="fas fa-trash-alt"></i> VOID HUB © 2026 | ERROR 404: RULES NOT FOUND | <i class="fas fa-cloud-upload-alt"></i> 0x7F3A</p>
+</footer>
+
+<script>
+    // enhanced typewriter with dynamic text and glitchy vibe
+    const textArray = [
+        "[>] Establishing quantum tunnel to Void Core...",
+        "[>] Bypassing owens trash ass anti cheat... 100%",
+        "[>] Extracting staff data from Boba Cafe, Hokui, Delights Bakery,Kohau...",
+        "[>] Loading #wall-of-shame DB with 100+ corrupted admins...",
+        "[>] idk...",
+        "[>] VOID_HUB ACTIVE. Welcome, Troller."
+    ];
+    
+    let textIndex = 0;
+    let charIndex = 0;
+    let lineOffset = 0;
+    const typewriterEl = document.getElementById("typewriter");
+    const terminalBody = document.querySelector(".terminal-body");
+
+    function typeEffect() {
+        if (textIndex < textArray.length) {
+            let currentLine = textArray[textIndex];
+            if (charIndex < currentLine.length) {
+                typewriterEl.innerHTML += currentLine.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeEffect, 45);
+            } else {
+                typewriterEl.innerHTML += "<br><span style='color:#0fa;'>> </span>";
+                textIndex++;
+                charIndex = 0;
+                setTimeout(typeEffect, 600);
+            }
+        } else {
+            let finalMsg = document.createElement("div");
+            finalMsg.style.marginTop = "10px";
+            finalMsg.style.color = "#0ff";
+            finalMsg.innerHTML = "<span style='color:magenta;'>[SYSTEM_READY]</span> Type /help for commands";
+            typewriterEl.appendChild(finalMsg);
+        }
+    }
+
+    setTimeout(() => {
+        typewriterEl.innerHTML = "<span style='color:#0ff;'>> </span>";
+        typeEffect();
+    }, 800);
+
+    // Matrix rain canvas effect for cyber vibe
+    const canvas = document.getElementById('matrixCanvas');
+    let ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let matrixColumns = [];
+    const matrixChars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン";
+    
+    function initMatrix() {
+        const columns = Math.floor(canvas.width / 20);
+        matrixColumns = [];
+        for(let i = 0; i < columns; i++) {
+            matrixColumns[i] = Math.floor(Math.random() * canvas.height / 20);
+        }
+    }
+    
+    function drawMatrix() {
+        if(!ctx) return;
+        ctx.fillStyle = "rgba(3, 3, 10, 0.045)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0cf";
+        ctx.font = "14px 'Fira Code'";
+        for(let i = 0; i < matrixColumns.length; i++) {
+            const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+            const x = i * 20;
+            const y = matrixColumns[i] * 18;
+            ctx.fillStyle = `rgba(0, 255, 255, ${Math.random() * 0.5 + 0.2})`;
+            ctx.fillText(char, x, y);
+            if(y > canvas.height && Math.random() > 0.98) {
+                matrixColumns[i] = 0;
+            } else {
+                matrixColumns[i]++;
+            }
+        }
+        requestAnimationFrame(drawMatrix);
+    }
+    
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initMatrix();
+        resizeStarfieldCanvas();
+        drawStaticStars();
+    });
+    
+    initMatrix();
+    drawMatrix();
+    
+    // add interactive hover glint on cards
+    const cards = document.querySelectorAll('.tech-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--x', `${x}px`);
+            card.style.setProperty('--y', `${y}px`);
+            const glow = `radial-gradient(circle at ${x}px ${y}px, rgba(0,255,255,0.2), transparent 70%)`;
+            card.style.backgroundImage = glow;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.backgroundImage = '';
+        });
+    });
+    
+    // dynamic subtitle glitch replacement
+    setInterval(() => {
+        const sub = document.querySelector('.subtitle');
+        if(sub && Math.random() > 0.85) {
+            sub.style.textShadow = "0 0 2px magenta";
+            setTimeout(() => { sub.style.textShadow = "none"; }, 120);
+        }
+    }, 3000);
+    
+    // extra: update footer blink
+    setInterval(() => {
+        const footer = document.querySelector('footer p');
+        if(footer && Math.random() > 0.9) {
+            footer.style.opacity = "0.7";
+            setTimeout(() => footer.style.opacity = "1", 200);
+        }
+    }, 2000);
+    
+    // advanced console log style
+    console.log("%c[VOID_HUB] System online | Blacklist active | Raids: Hokui, Delights Bakery, Boba", "color: #0ff; font-size: 16px; font-family: monospace;");
+
+    // ================= LIGHTWEIGHT SPACE BACKGROUND (static starfield) =================
+    const starCanvas = document.getElementById('starfieldCanvas');
+    let starCtx = starCanvas.getContext('2d');
+    let starsArray = [];
+
+    function resizeStarfieldCanvas() {
+        starCanvas.width = window.innerWidth;
+        starCanvas.height = window.innerHeight;
+    }
+
+    function generateStars() {
+        const starCount = 550;  // balanced for good space look without lag
+        starsArray = [];
+        for (let i = 0; i < starCount; i++) {
+            starsArray.push({
+                x: Math.random() * starCanvas.width,
+                y: Math.random() * starCanvas.height,
+                radius: Math.random() * 2.2 + 0.6,
+                alpha: Math.random() * 0.7 + 0.3,
+                twinkleSpeed: 0.002 + Math.random() * 0.01,
+                color: Math.random() > 0.85 ? 'cyan' : (Math.random() > 0.7 ? '#aaccff' : '#ffffff')
+            });
+        }
+    }
+
+    function drawStaticStars() {
+        if (!starCtx) return;
+        starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+        starCtx.globalCompositeOperation = 'source-over';
+        for (let s of starsArray) {
+            starCtx.beginPath();
+            starCtx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            let starColor = s.color;
+            if (starColor === 'cyan') starCtx.fillStyle = `rgba(0, 255, 255, ${s.alpha * 0.9})`;
+            else if (starColor === '#aaccff') starCtx.fillStyle = `rgba(170, 204, 255, ${s.alpha * 0.8})`;
+            else starCtx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+            starCtx.fill();
+        }
+        // optional very faint nebula effect
+        starCtx.globalCompositeOperation = 'lighter';
+        starCtx.shadowBlur = 0;
+    }
+
+    // subtle twinkling but ultra low perf: update stars alpha slowly and redraw occasionally to not overwhelm.
+    // using setInterval to avoid constant high CPU but minimal.
+    let twinkleInterval = null;
+    function startTwinkling() {
+        if (twinkleInterval) clearInterval(twinkleInterval);
+        twinkleInterval = setInterval(() => {
+            if (!starCtx || !starsArray.length) return;
+            // softly modify alpha for some stars (10% each cycle)
+            for (let i = 0; i < starsArray.length; i++) {
+                if (Math.random() < 0.2) {
+                    let delta = (Math.random() - 0.5) * 0.15;
+                    starsArray[i].alpha += delta;
+                    if (starsArray[i].alpha > 0.9) starsArray[i].alpha = 0.9;
+                    if (starsArray[i].alpha < 0.25) starsArray[i].alpha = 0.25;
+                }
+            }
+            drawStaticStars();
+        }, 800);
+    }
+
+    function initStarfield() {
+        resizeStarfieldCanvas();
+        generateStars();
+        drawStaticStars();
+        startTwinkling();
+    }
+
+    window.addEventListener('resize', () => {
+        resizeStarfieldCanvas();
+        generateStars();
+        drawStaticStars();
+    });
+
+    initStarfield();
+    // make sure starfield canvas background is fully integrated
+    starCanvas.style.backgroundColor = 'transparent';
+    document.body.style.backgroundColor = 'transparent'; // ensure deep background shows gradient
+</script>
+
+<style>
+    .btn-outline {
+        transition: all 0.3s;
+    }
+    .btn-outline:hover {
+        background: cyan;
+        color: black !important;
+        box-shadow: 0 0 14px cyan;
+    }
+    .tech-card {
+        transition: 0.3s ease;
+    }
+    ::selection {
+        background: cyan;
+        color: black;
+    }
+    #matrixCanvas {
+        position: fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        opacity: 0.25;
+        pointer-events: none;
+    }
+    .hero, .grid-container, nav, footer, .section-title {
+        position: relative;
+    }
+    .terminal-box {
+        z-index: 9;
+        position: relative;
+    }
+    .cafe-badge i {
+        margin-right: 5px;
+    }
+    .stat-badge {
+        margin-top: 30px;
+        background: rgba(0,20,25,0.7);
+        border-radius: 40px;
+        border: 0.5px solid cyan;
+        backdrop-filter: blur(4px);
+    }
+    /* ensure starfield sits behind everything but visible */
+    #starfieldCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        background: transparent;
+    }
+    body {
+        background: radial-gradient(circle at 20% 30%, #05080f, #010101);
+    }
+    .glow-bg {
+        z-index: 1;
+    }
+    body::before {
+        z-index: 3;
+    }
+    #matrixCanvas {
+        z-index: 2;
+    }
+    .hero, .grid-container, nav, footer, .section-title, .terminal-box, .btn-glitch, .stat-badge {
+        z-index: 12;
+    }
+    .tech-card {
+        z-index: 12;
+    }
+</style>
+</body>
+</html>
